@@ -1,3 +1,53 @@
+// Firebase Configuration (Placeholders - Replace with your actual config)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase if SDK is loaded
+let auth;
+if (typeof firebase !== 'undefined') {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+}
+
+// Google Login Handler
+function loginWithGoogle() {
+  if (!auth) {
+    showToast('❌ Firebase SDK가 로드되지 않았습니다.');
+    return;
+  }
+
+  const provider = new firebase.auth.GoogleAuthProvider();
+  
+  auth.signInWithPopup(provider)
+    .then((result) => {
+      const user = result.user;
+      showToast(`👋 환영합니다, ${user.displayName}님!`);
+      
+      // Simulate network delay for transition
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1500);
+    })
+    .catch((error) => {
+      console.error("Google Login Error:", error);
+      showToast('❌ 로그인 중 오류가 발생했습니다: ' + error.message);
+    });
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const googleBtn = document.getElementById('google-login-btn');
+  if (googleBtn) {
+    googleBtn.addEventListener('click', loginWithGoogle);
+  }
+});
+
 // Auth State Toggle
 function toggleAuth(mode) {
   const loginForm = document.getElementById('login-form');

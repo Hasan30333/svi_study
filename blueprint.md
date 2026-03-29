@@ -11,6 +11,7 @@
 - **Homework Manager:** Tracking and reporting homework from teachers.
 - **Alarm & Review:** Ebbinghaus Forgetting Curve-based review notifications.
 - **Stats & Achievements:** Visualized progress and unlocked badges for motivation.
+- **Google Authentication:** Integration with Firebase Auth for secure and easy login.
 
 **Aesthetic:**
 - **Colors:** A professional yet energetic palette (Primary: `#1A6FE8`, Dark Accent: `#1A2340`, Background: `#F4F6FA`).
@@ -39,3 +40,24 @@ Create a visually stunning and functional login page (`login.html`) as a separat
 - **UI Check:** Verify the login card is centered and visually consistent with the dashboard.
 - **Functionality Check:** Ensure the Login/Sign Up toggle and mock login work smoothly.
 - **Accessibility Check:** Confirm form labels and keyboard navigation are correctly implemented.
+
+## **Current Implementation Plan: Google Login Integration**
+
+### **Objective**
+Enable Google Authentication for the "스비" (Study Assistant) platform using Firebase Authentication to provide a secure and convenient login experience.
+
+### **Key Files & Context**
+- `login.html`: Add Firebase SDK and handle Google button interaction.
+- `main.js`: Implement Firebase Auth logic for Google provider.
+
+### **Implementation Steps**
+1.  **Add IDs and SDKs to `login.html`**: Add `id="google-login-btn"` and import Firebase App/Auth via CDN.
+2.  **Initialize Firebase in `main.js`**: Set up the configuration and initialize `getAuth`.
+3.  **Implement `loginWithGoogle`**: Use `signInWithPopup` to authenticate with Google.
+4.  **Handle Auth State**: Redirect to `index.html` on successful login and show toast notifications.
+5.  **Error Handling**: Inform the user if the login process fails.
+
+### **Verification & Testing**
+- **Auth Flow**: Verify the Google popup appears and correctly authenticates.
+- **Success Handling**: Confirm redirect to the dashboard after login.
+- **Error Feedback**: Verify that errors are displayed as toast notifications.
