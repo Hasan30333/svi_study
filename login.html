@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스비 - 로그인</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #F4F6FA 0%, #EBF2FD 100%);
+    overflow: hidden;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    animation: fadeInUp 0.5s ease both;
+  }
+
+  .login-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .logo-mark { width: 42px; height: 42px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: white; box-shadow: 0 4px 12px rgba(26,111,232,0.3); }
+  .logo-text { font-size: 24px; font-weight: 900; color: var(--accent-dk); }
+  .logo-text span { color: var(--accent); }
+
+  .login-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 36px;
+    box-shadow: 0 20px 50px rgba(26,35,64,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle texture effect */
+  .login-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+    opacity: 0.02;
+    pointer-events: none;
+  }
+
+  .auth-toggle {
+    display: flex;
+    background: var(--surface2);
+    padding: 5px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    position: relative;
+  }
+  .toggle-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    z-index: 1;
+  }
+  .toggle-btn.active {
+    color: var(--accent);
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+  }
+  .input-wrapper {
+    position: relative;
+  }
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: var(--muted);
+  }
+  .form-input {
+    width: 100%;
+    padding: 13px 14px 13px 42px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: var(--bg);
+  }
+  .form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: white;
+    box-shadow: 0 0 0 4px var(--accent-lt);
+  }
+
+  .login-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    margin-top: 10px;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 28px 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .social-login {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.18s;
+  }
+  .social-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-lt);
+  }
+
+  .login-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .login-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .login-footer a:hover {
+    text-decoration: underline;
+  }
+
+  #signup-form { display: none; }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-logo">
+    <div class="logo-mark">스</div>
+    <div class="logo-text">스비 <span>Study</span></div>
+  </div>
+
+  <div class="login-card">
+    <div class="auth-toggle">
+      <button class="toggle-btn active" onclick="toggleAuth('login')">로그인</button>
+      <button class="toggle-btn" onclick="toggleAuth('signup')">회원가입</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">이메일 주소</label>
+        <div class="input-wrapper">
+          <span class="input-icon">📧</span>
+          <input type="email" class="form-input" placeholder="example@study.com" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input type="password" class="form-input" placeholder="••••••••" required>
+        </div>
+      </div>
+      <div style="text-align: right; margin-bottom: 20px;">
+        <a href="#" style="font-size: 12px; color: var(--muted); text-decoration: none;">비밀번호를 잊으셨나요?</a>
+      </div>
+      <button type="submit" class="btn btn-primary login-btn">스비 시작하기</button>
+    </form>
+
+    <!-- Sign Up Form -->
+    <form id="signup-form" onsubmit="handleSignUp(event)">
+      <div class="form-group">
+        <label class="form-label">이름</label>
+        <div class="input-wrapper">
+          <span class="input-icon">👤</span>
+          <input type="text" class="form-input" placeholder="홍길동" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">이메일 주소</label>
+        <div class="input-wrapper">
+          <span class="input-icon">📧</span>
+          <input type="email" class="form-input" placeholder="example@study.com" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <div class="input-wrapper">
+          <span class="input-icon">🔒</span>
+          <input type="password" class="form-input" placeholder="8자 이상 입력" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary login-btn">무료로 가입하기</button>
+    </form>
+
+    <div class="divider">또는 다음으로 계속하기</div>
+
+    <div class="social-login">
+      <button class="social-btn">
+        <span>🌐</span> Google
+      </button>
+      <button class="social-btn">
+        <span>🍎</span> Apple
+      </button>
+    </div>
+  </div>
+
+  <div class="login-footer">
+    계정이 없으신가요? <a href="#" onclick="toggleAuth('signup'); return false;">지금 가입하세요</a>
+  </div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
