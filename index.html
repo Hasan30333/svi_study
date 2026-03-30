@@ -180,6 +180,41 @@
   .plan-todo-input:focus { border-color: var(--accent); }
   .plan-date-input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; color: var(--text-sub); cursor: pointer; flex-shrink: 0; }
   .plan-date-badge { font-size: 11px; color: var(--accent); background: var(--accent-lt); border-radius: 10px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0; }
+
+  /* 목표 생성 모달 */
+  .goal-modal-overlay { position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(26,35,64,0.45);z-index:1000;display:flex;align-items:center;justify-content:center; }
+  .goal-modal-box { background:white;border-radius:24px;padding:36px;width:100%;max-width:560px;box-shadow:0 24px 60px rgba(0,0,0,0.18);animation:fadeInUp 0.25s ease; }
+  .goal-modal-title { font-size:17px;font-weight:900;color:var(--accent-dk);margin-bottom:6px; }
+  .goal-modal-step { font-size:12px;color:var(--muted);margin-bottom:24px; }
+  .goal-block-group { margin-bottom:20px; }
+  .goal-block-label { font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:8px; }
+  .goal-block-list { display:flex;flex-wrap:wrap;gap:7px; }
+  .goal-block { padding:7px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-weight:600;color:var(--text-sub);cursor:pointer;transition:all 0.15s;background:white; }
+  .goal-block:hover { border-color:var(--accent);color:var(--accent); }
+  .goal-block.selected { border-color:var(--accent);background:var(--accent);color:white; }
+  .goal-preview { background:var(--accent-lt);border:1.5px solid #BFDBFE;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:700;color:var(--accent-dk);margin-bottom:24px;min-height:44px;display:flex;align-items:center; }
+  .goal-number-row { display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:14px;color:var(--text-sub);font-weight:600; }
+  .goal-number-input { width:70px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:700;text-align:center;font-family:'Noto Sans KR',sans-serif;outline:none; }
+  .goal-number-input:focus { border-color:var(--accent); }
+  .goal-modal-actions { display:flex;gap:10px;justify-content:flex-end;margin-top:24px; }
+
+  /* 목표 카드 새 스타일 */
+  .goal-meta { font-size:12px;color:var(--muted);margin-bottom:14px;display:flex;gap:12px;flex-wrap:wrap; }
+  .goal-meta span { background:var(--surface2);border-radius:8px;padding:3px 9px;border:1px solid var(--border); }
+  .unit-list { display:flex;flex-direction:column;gap:6px;margin-bottom:12px; }
+  .unit-item { display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--border); }
+  .unit-item.done { opacity:0.5; }
+  .unit-check { width:20px;height:20px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;font-weight:900;color:white;flex-shrink:0;transition:all 0.15s; }
+  .unit-item.done .unit-check { background:var(--accent);border-color:var(--accent); }
+  .unit-order { font-size:11px;font-weight:700;color:var(--muted);min-width:22px; }
+  .unit-title { font-size:13px;font-weight:600;color:var(--text);flex:1; }
+  .unit-item.done .unit-title { text-decoration:line-through; }
+  .unit-date { font-size:11px;color:var(--accent);background:var(--accent-lt);border-radius:8px;padding:2px 7px;white-space:nowrap;flex-shrink:0; }
+  .unit-memo-btn { font-size:12px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;transition:all 0.15s;flex-shrink:0; }
+  .unit-memo-btn:hover { border-color:var(--accent);color:var(--accent); }
+  .unit-memo-box { padding:8px 12px 8px 50px;animation:fadeInUp 0.15s ease; }
+  .unit-memo-input { width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:13px;outline:none;resize:vertical;min-height:56px; }
+  .unit-memo-input:focus { border-color:var(--accent); }
 </style>
 </head>
 <body>
@@ -488,29 +523,29 @@
     const questSnap = await getDocs(q);
     const quests = questSnap.docs.map(d => ({ id: d.id, source: 'quest', ...d.data() }));
 
-    // 공부 계획 todos 중 오늘 날짜인 항목 불러오기
+    // 공부 계획 units 중 오늘 날짜인 항목 불러오기
     const goalsSnap = await getDocs(collection(db, 'users', user.uid, 'goals'));
+    const SUBJ_ICONS = { '국어':'📝', '영어':'📖', '수학':'📐' };
+    const SUBJ_COLORS = { '국어':'#F5A623', '영어':'#1A6FE8', '수학':'#6366F1' };
     const goalTodos = (await Promise.all(goalsSnap.docs.map(async gDoc => {
-      const todosSnap = await getDocs(
-        query(collection(db, 'users', user.uid, 'goals', gDoc.id, 'todos'),
+      const gData = gDoc.data();
+      const unitsSnap = await getDocs(
+        query(collection(db, 'users', user.uid, 'goals', gDoc.id, 'units'),
               where('scheduledDate', '==', today))
       );
-      return todosSnap.docs.map(t => ({
-        id: t.id,
+      return unitsSnap.docs.map(u => ({
+        id: u.id,
         goalId: gDoc.id,
-        goalTitle: gDoc.data().title,
         source: 'goal-todo',
-        // quest-card 호환 필드
-        subject: t.data().subject,
-        bookName: t.data().scheduledDate ? gDoc.data().title : '',
-        title: t.data().title,
-        icon: { '수학': '📐', '영어': '📖', '국어': '📝', '기타': '📌' }[t.data().subject] || '📌',
-        color: { '수학': '#6366F1', '영어': '#1A6FE8', '국어': '#F5A623', '기타': '#8A94B2' }[t.data().subject] || '#8A94B2',
+        subject: gData.subject || '기타',
+        bookName: gData.title,
+        title: u.data().title,
+        icon: SUBJ_ICONS[gData.subject] || '📌',
+        color: SUBJ_COLORS[gData.subject] || '#8A94B2',
         xpReward: 50,
         goalCount: 1,
-        doneCount: t.data().completed ? 1 : 0,
-        completed: t.data().completed,
-        ...t.data()
+        doneCount: u.data().completed ? 1 : 0,
+        completed: u.data().completed,
       }));
     }))).flat();
 
@@ -614,8 +649,8 @@
 
     let xpReward = 0;
     if (source === 'goal-todo') {
-      const todoRef = doc(db, 'users', currentUserId, 'goals', goalId, 'todos', questId);
-      await updateDoc(todoRef, { completed: true });
+      const unitRef = doc(db, 'users', currentUserId, 'goals', goalId, 'units', questId);
+      await updateDoc(unitRef, { completed: true });
       xpReward = 50;
     } else {
       const questRef = doc(db, 'users', currentUserId, 'quests', questId);
@@ -667,6 +702,14 @@
 
   // ── 공부 계획 탭 ───────────────────────────────────────
 
+  const SEMESTERS = [
+    '중1 1학기','중1 2학기','중2 1학기','중2 2학기','중3 1학기','중3 2학기',
+    '고1 1학기','고1 2학기','고2 1학기','고2 2학기','고3 1학기','고3 2학기','수능'
+  ];
+  const SUBJECTS = ['국어','영어','수학'];
+  const GOAL_TYPES = ['내신','복습','선행','개념','응용','심화'];
+  const SUBJECT_ICONS = { '국어':'📝', '영어':'📖', '수학':'📐' };
+
   async function loadPlanTab() {
     const container = document.getElementById('goals-container');
     container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">불러오는 중...</div>`;
@@ -674,19 +717,21 @@
       query(collection(db, 'users', currentUserId, 'goals'), orderBy('createdAt', 'asc'))
     );
     const goals = await Promise.all(goalsSnap.docs.map(async gDoc => {
-      const todosSnap = await getDocs(
-        query(collection(db, 'users', currentUserId, 'goals', gDoc.id, 'todos'), orderBy('createdAt', 'asc'))
+      const unitsSnap = await getDocs(
+        query(collection(db, 'users', currentUserId, 'goals', gDoc.id, 'units'), orderBy('order', 'asc'))
       );
-      return {
-        id: gDoc.id,
-        ...gDoc.data(),
-        todos: todosSnap.docs.map(t => ({ id: t.id, ...t.data() }))
-      };
+      return { id: gDoc.id, ...gDoc.data(), units: unitsSnap.docs.map(u => ({ id: u.id, ...u.data() })) };
     }));
     renderGoals(goals);
   }
 
-  const SUBJECT_COLORS = { '수학': '#6366F1', '영어': '#1A6FE8', '국어': '#F5A623', '기타': '#8A94B2' };
+  function calcUnitDate(createdAt, targetDays, order, total) {
+    const base = createdAt?.toDate ? createdAt.toDate() : new Date();
+    const daysPerUnit = total > 0 ? targetDays / total : targetDays;
+    const d = new Date(base);
+    d.setDate(d.getDate() + Math.round(daysPerUnit * order));
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  }
 
   function renderGoals(goals) {
     const container = document.getElementById('goals-container');
@@ -700,144 +745,224 @@
       return;
     }
     container.innerHTML = goals.map(goal => {
-      const total = goal.todos.length;
-      const done = goal.todos.filter(t => t.completed).length;
+      const units = goal.units || [];
+      const total = units.length;
+      const done = units.filter(u => u.completed).length;
       const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-      const todoHTML = goal.todos.map(todo => {
-        const color = SUBJECT_COLORS[todo.subject] || SUBJECT_COLORS['기타'];
-        const dateBadge = todo.scheduledDate
-          ? `<span class="plan-date-badge">📅 ${todo.scheduledDate.slice(5).replace('-','/')}</span>`
-          : '';
+      const icon = SUBJECT_ICONS[goal.subject] || '🎯';
+
+      const unitsHTML = units.map((unit, i) => {
+        const suggestedDate = calcUnitDate(goal.createdAt, goal.targetDays || 30, i + 1, total);
         return `
-          <div class="plan-todo-item${todo.completed ? ' done' : ''}" data-todo-id="${todo.id}" data-goal-id="${goal.id}">
-            <div class="plan-todo-check" onclick="planToggleTodo('${goal.id}','${todo.id}',${todo.completed})">
-              ${todo.completed ? '✓' : ''}
+          <div class="unit-item${unit.completed ? ' done' : ''}" id="unit-${unit.id}">
+            <div class="unit-check" onclick="planToggleUnit('${goal.id}','${unit.id}',${unit.completed})">
+              ${unit.completed ? '✓' : ''}
             </div>
-            <span class="plan-subject-tag" style="background:${color}20;color:${color};border:1px solid ${color}40">${todo.subject}</span>
-            <span class="plan-todo-title">${todo.title}</span>
-            ${dateBadge}
-            <button class="plan-delete-btn" onclick="planDeleteTodo('${goal.id}','${todo.id}')">🗑️</button>
+            <span class="unit-order">${i+1}.</span>
+            <span class="unit-title">${unit.title}</span>
+            <span class="unit-date">~${suggestedDate}</span>
+            <button class="unit-memo-btn" onclick="planToggleMemo('${unit.id}')">메모</button>
+            <button class="plan-delete-btn" onclick="planDeleteUnit('${goal.id}','${unit.id}')">🗑️</button>
+          </div>
+          <div class="unit-memo-box" id="memo-${unit.id}" style="display:none;">
+            <textarea class="unit-memo-input" placeholder="이 단원 공부 계획을 적어봐..."
+              onblur="planSaveMemo('${goal.id}','${unit.id}',this.value)">${unit.memo || ''}</textarea>
           </div>`;
       }).join('');
+
       return `
         <div class="card plan-goal-card" id="goal-card-${goal.id}">
           <div class="plan-goal-header">
-            <span style="font-size:18px;">🎯</span>
+            <span style="font-size:18px;">${icon}</span>
             <span class="plan-goal-title">${goal.title}</span>
             <span class="plan-goal-progress">${done}/${total} · ${pct}%</span>
             <button class="plan-delete-btn" onclick="planDeleteGoal('${goal.id}')">🗑️</button>
           </div>
-          <div style="height:5px;background:var(--surface2);border-radius:3px;margin:10px 0 14px;">
+          <div class="goal-meta">
+            <span>📅 ${goal.targetDays}일</span>
+            <span>📆 주 ${goal.weeklyCount}회</span>
+            <span>⏱ ${goal.weeklyHours}시간/회</span>
+          </div>
+          <div style="height:5px;background:var(--surface2);border-radius:3px;margin-bottom:14px;">
             <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;transition:width 0.3s;"></div>
           </div>
-          <div class="plan-todo-list" id="todo-list-${goal.id}">${todoHTML}</div>
-          <div class="plan-add-todo">
-            <select class="plan-subject-select" id="subject-${goal.id}">
-              <option value="수학">수학</option>
-              <option value="영어">영어</option>
-              <option value="국어">국어</option>
-              <option value="기타">기타</option>
-            </select>
-            <input class="plan-todo-input" id="todo-input-${goal.id}" type="text" placeholder="할 일 입력..."
-              onkeydown="if(event.key==='Enter' && !event.isComposing) planAddTodo('${goal.id}')">
-            <input class="plan-date-input" id="date-${goal.id}" type="date" title="오늘의 할 일에 표시할 날짜">
+          <div class="unit-list" id="unit-list-${goal.id}">${unitsHTML}</div>
+          <div class="plan-add-todo" style="padding-top:10px;border-top:1px solid var(--border);">
+            <input class="plan-todo-input" id="unit-input-${goal.id}" type="text" placeholder="단원명 입력... (예: 1단원 - 기초 문법)"
+              onkeydown="if(event.key==='Enter' && !event.isComposing) planAddUnit('${goal.id}')">
             <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;"
-              onclick="planAddTodo('${goal.id}')">+</button>
+              onclick="planAddUnit('${goal.id}')">+ 단원</button>
           </div>
         </div>`;
     }).join('');
   }
 
-  // 목표 추가
-  async function planAddGoal(title) {
-    if (!title.trim()) return;
-    await addDoc(collection(db, 'users', currentUserId, 'goals'), {
-      title: title.trim(),
-      createdAt: serverTimestamp()
-    });
-    loadPlanTab();
-  }
-
-  // 목표 삭제 (todos 포함)
+  // 목표 삭제
   async function planDeleteGoal(goalId) {
-    const todosSnap = await getDocs(collection(db, 'users', currentUserId, 'goals', goalId, 'todos'));
-    await Promise.all(todosSnap.docs.map(t => deleteDoc(t.ref)));
+    const unitsSnap = await getDocs(collection(db, 'users', currentUserId, 'goals', goalId, 'units'));
+    await Promise.all(unitsSnap.docs.map(u => deleteDoc(u.ref)));
     await deleteDoc(doc(db, 'users', currentUserId, 'goals', goalId));
     loadPlanTab();
   }
 
-  // to-do 추가
-  async function planAddTodo(goalId) {
-    const input = document.getElementById(`todo-input-${goalId}`);
-    const subject = document.getElementById(`subject-${goalId}`).value;
-    const dateInput = document.getElementById(`date-${goalId}`);
+  // 단원 추가
+  async function planAddUnit(goalId) {
+    const input = document.getElementById(`unit-input-${goalId}`);
     const title = input.value.trim();
     if (!title) return;
-    const scheduledDate = dateInput?.value || null;
     input.value = '';
-    if (dateInput) dateInput.value = '';
-    await addDoc(collection(db, 'users', currentUserId, 'goals', goalId, 'todos'), {
-      subject, title, completed: false, scheduledDate, createdAt: serverTimestamp()
+    const unitsSnap = await getDocs(collection(db, 'users', currentUserId, 'goals', goalId, 'units'));
+    await addDoc(collection(db, 'users', currentUserId, 'goals', goalId, 'units'), {
+      title, order: unitsSnap.size + 1, memo: '', completed: false, scheduledDate: null, createdAt: serverTimestamp()
     });
     loadPlanTab();
   }
 
-  // to-do 완료 토글
-  async function planToggleTodo(goalId, todoId, current) {
-    await updateDoc(doc(db, 'users', currentUserId, 'goals', goalId, 'todos', todoId), {
-      completed: !current
-    });
+  // 단원 완료 토글
+  async function planToggleUnit(goalId, unitId, current) {
+    await updateDoc(doc(db, 'users', currentUserId, 'goals', goalId, 'units', unitId), { completed: !current });
     loadPlanTab();
   }
 
-  // to-do 삭제
-  async function planDeleteTodo(goalId, todoId) {
-    await deleteDoc(doc(db, 'users', currentUserId, 'goals', goalId, 'todos', todoId));
+  // 단원 삭제
+  async function planDeleteUnit(goalId, unitId) {
+    await deleteDoc(doc(db, 'users', currentUserId, 'goals', goalId, 'units', unitId));
     loadPlanTab();
   }
 
-  // 목표 추가 모달
+  // 메모 토글
+  function planToggleMemo(unitId) {
+    const box = document.getElementById(`memo-${unitId}`);
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // 메모 저장
+  async function planSaveMemo(goalId, unitId, value) {
+    await updateDoc(doc(db, 'users', currentUserId, 'goals', goalId, 'units', unitId), { memo: value });
+  }
+
+  // ── 목표 추가 모달 (2단계) ────────────────────────────
+  let _modalStep = 1;
+  let _modalData = { semester: '', subject: '', goalType: '' };
+
   function showAddGoalModal() {
+    _modalStep = 1;
+    _modalData = { semester: '', subject: '', goalType: '' };
+    renderGoalModal();
+  }
+
+  function renderGoalModal() {
     const existing = document.getElementById('goal-modal');
     if (existing) existing.remove();
+
     const modal = document.createElement('div');
     modal.id = 'goal-modal';
-    modal.style.cssText = `
-      position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(26,35,64,0.4);z-index:1000;
-      display:flex;align-items:center;justify-content:center;`;
-    modal.innerHTML = `
-      <div style="background:white;border-radius:20px;padding:32px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,0.15);">
-        <div style="font-size:16px;font-weight:900;color:var(--accent-dk);margin-bottom:20px;">🎯 새 목표 추가</div>
-        <input id="goal-modal-input" type="text" placeholder="예: 고1 수학 선행, 내신 대비..."
-          style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;
-                 font-family:'Noto Sans KR',sans-serif;font-size:14px;outline:none;margin-bottom:16px;"
-          onkeydown="if(event.key==='Enter') confirmAddGoal()"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
-          <button class="btn btn-outline" onclick="document.getElementById('goal-modal').remove()">취소</button>
-          <button class="btn btn-primary" onclick="confirmAddGoal()">추가하기</button>
+    modal.className = 'goal-modal-overlay';
+
+    const previewText = [_modalData.semester, _modalData.subject, _modalData.goalType].filter(Boolean).join(' ') || '선택 결과가 여기 표시돼요';
+
+    const step1 = `
+      <div class="goal-modal-title">🎯 공부 목표 설정</div>
+      <div class="goal-modal-step">1단계 · 목표 선택</div>
+      <div class="goal-block-group">
+        <div class="goal-block-label">📅 학기</div>
+        <div class="goal-block-list">
+          ${SEMESTERS.map(s => `<div class="goal-block${_modalData.semester===s?' selected':''}" onclick="modalSelect('semester','${s}')">${s}</div>`).join('')}
         </div>
+      </div>
+      <div class="goal-block-group">
+        <div class="goal-block-label">📚 과목</div>
+        <div class="goal-block-list">
+          ${SUBJECTS.map(s => `<div class="goal-block${_modalData.subject===s?' selected':''}" onclick="modalSelect('subject','${s}')">${s}</div>`).join('')}
+        </div>
+      </div>
+      <div class="goal-block-group">
+        <div class="goal-block-label">🎯 공부 유형</div>
+        <div class="goal-block-list">
+          ${GOAL_TYPES.map(t => `<div class="goal-block${_modalData.goalType===t?' selected':''}" onclick="modalSelect('goalType','${t}')">${t}</div>`).join('')}
+        </div>
+      </div>
+      <div class="goal-preview">✨ ${previewText}</div>
+      <div class="goal-modal-actions">
+        <button class="btn btn-outline" onclick="document.getElementById('goal-modal').remove()">취소</button>
+        <button class="btn btn-primary" onclick="goalModalNext()">다음 →</button>
       </div>`;
+
+    const step2 = `
+      <div class="goal-modal-title">🎯 ${previewText}</div>
+      <div class="goal-modal-step">2단계 · 목표 기간 설정</div>
+      <div class="goal-number-row">
+        <span>목표 일수</span>
+        <input class="goal-number-input" id="input-days" type="number" min="1" max="365" placeholder="30">
+        <span>일</span>
+      </div>
+      <div class="goal-number-row">
+        <span>주</span>
+        <input class="goal-number-input" id="input-weekly" type="number" min="1" max="7" placeholder="5">
+        <span>회</span>
+        <input class="goal-number-input" id="input-hours" type="number" min="0.5" max="12" step="0.5" placeholder="2">
+        <span>시간/회</span>
+      </div>
+      <div class="goal-modal-actions">
+        <button class="btn btn-outline" onclick="goalModalBack()">← 이전</button>
+        <button class="btn btn-primary" onclick="goalModalCreate()">목표 만들기 🚀</button>
+      </div>`;
+
+    modal.innerHTML = `<div class="goal-modal-box">${_modalStep === 1 ? step1 : step2}</div>`;
     document.body.appendChild(modal);
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-    document.getElementById('goal-modal-input').focus();
   }
 
-  function confirmAddGoal() {
-    const input = document.getElementById('goal-modal-input');
-    const title = input.value.trim();
-    if (!title) return;
+  function modalSelect(key, value) {
+    _modalData[key] = value;
+    renderGoalModal();
+  }
+
+  function goalModalNext() {
+    if (!_modalData.semester || !_modalData.subject || !_modalData.goalType) {
+      window.showToast?.('❗ 학기, 과목, 유형을 모두 선택해주세요.');
+      return;
+    }
+    _modalStep = 2;
+    renderGoalModal();
+  }
+
+  function goalModalBack() {
+    _modalStep = 1;
+    renderGoalModal();
+  }
+
+  async function goalModalCreate() {
+    const days = parseInt(document.getElementById('input-days').value) || 30;
+    const weekly = parseInt(document.getElementById('input-weekly').value) || 5;
+    const hours = parseFloat(document.getElementById('input-hours').value) || 2;
+    const title = `${_modalData.semester} ${_modalData.subject} ${_modalData.goalType}`;
     document.getElementById('goal-modal').remove();
-    planAddGoal(title);
+    await addDoc(collection(db, 'users', currentUserId, 'goals'), {
+      title,
+      semester: _modalData.semester,
+      subject: _modalData.subject,
+      goalType: _modalData.goalType,
+      targetDays: days,
+      weeklyCount: weekly,
+      weeklyHours: hours,
+      createdAt: serverTimestamp()
+    });
+    loadPlanTab();
+    window.showToast?.(`✅ "${title}" 목표가 추가됐어!`);
   }
 
   window.showAddGoalModal = showAddGoalModal;
-  window.confirmAddGoal = confirmAddGoal;
-  window.planAddTodo = planAddTodo;
-  window.planToggleTodo = planToggleTodo;
-  window.planDeleteTodo = planDeleteTodo;
+  window.modalSelect = modalSelect;
+  window.goalModalNext = goalModalNext;
+  window.goalModalBack = goalModalBack;
+  window.goalModalCreate = goalModalCreate;
+  window.planAddUnit = planAddUnit;
+  window.planToggleUnit = planToggleUnit;
+  window.planDeleteUnit = planDeleteUnit;
   window.planDeleteGoal = planDeleteGoal;
+  window.planToggleMemo = planToggleMemo;
+  window.planSaveMemo = planSaveMemo;
 </script>
 </body>
 </html>
