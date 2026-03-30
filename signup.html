@@ -243,6 +243,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, OAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCf6mosg_McII4o4INE1WtZbiNym7On_ns",
@@ -256,6 +257,38 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  function getTodayString() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  async function createUserDoc(uid, name, email) {
+    const today = getTodayString();
+    await setDoc(doc(db, 'users', uid), {
+      displayName: name,
+      email: email,
+      createdAt: serverTimestamp(),
+      level: 1,
+      xp: 0,
+      xpToNextLevel: 500,
+      streak: 0,
+      lastActiveDate: '',
+      totalStudyMinutes: 0,
+      totalQuestsCompleted: 0,
+      grade: ''
+    });
+    const defaultQuests = [
+      { subject: '수학', bookName: '쎈 B단계', title: '쎈 B단계 10문제 풀기', icon: '📐', color: '#6366F1', xpReward: 100, goalCount: 10 },
+      { subject: '영어', bookName: '자이스토리', title: '독해 지문 1개 풀기', icon: '📖', color: '#1A6FE8', xpReward: 80, goalCount: 1 },
+      { subject: '국어', bookName: '수능특강', title: '현대시 지문 1개 읽기', icon: '📝', color: '#F5A623', xpReward: 60, goalCount: 1 },
+    ];
+    await Promise.all(defaultQuests.map(q =>
+      addDoc(collection(db, 'users', uid, 'quests'), {
+        ...q, date: today, doneCount: 0, completed: false, completedAt: null
+      })
+    ));
+  }
 
   // 이메일 회원가입
   window.handleSignUp = async (event) => {
@@ -278,6 +311,7 @@
     try {
       const result = await createUserWithEmailAndPassword(auth, email, pw);
       await updateProfile(result.user, { displayName: name });
+      await createUserDoc(result.user.uid, name, email);
       showToast('✨ 가입을 환영합니다, ' + name + '님!');
       setTimeout(() => { window.location.href = 'index.html'; }, 1500);
     } catch (error) {

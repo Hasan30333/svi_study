@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
-import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCf6mosg_McII4o4INE1WtZbiNym7On_ns",
@@ -10,7 +10,7 @@ const firebaseConfig = {
   messagingSenderId: "780797547188",
   appId: "1:780797547188:web:20c77ac86661105fdbbde1",
   measurementId: "G-EXRS658K37",
-  databaseURL:"https://svi-study-default-rtdb.asia-southeast1.firebasedatabase.app/"
+  databaseURL: "https://svi-study-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -22,11 +22,8 @@ async function loginWithGoogle() {
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    showToast(`👋 환영합니다, ${user.displayName}님!`);
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 1500);
+    showToast(`👋 환영합니다, ${result.user.displayName}님!`);
+    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
   } catch (error) {
     console.error("Google Login Error:", error);
     showToast('❌ 로그인 중 오류가 발생했습니다: ' + error.message);
@@ -38,12 +35,39 @@ async function loginWithApple() {
   const provider = new OAuthProvider('apple.com');
   try {
     const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    showToast(`👋 환영합니다, ${user.displayName || '사용자'}님!`);
+    showToast(`👋 환영합니다, ${result.user.displayName || '사용자'}님!`);
     setTimeout(() => { window.location.href = 'index.html'; }, 1500);
   } catch (error) {
     console.error("Apple Login Error:", error);
     showToast('❌ Apple 로그인 오류: ' + error.message);
+  }
+}
+
+// Email Login Handler
+async function handleLogin(event) {
+  event.preventDefault();
+  const email = document.querySelector('#login-form input[type="email"]').value.trim();
+  const password = document.querySelector('#login-form input[type="password"]').value;
+  const btn = document.querySelector('#login-form .login-btn');
+
+  btn.disabled = true;
+  btn.textContent = '로그인 중...';
+
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    showToast(`👋 환영합니다, ${result.user.displayName || email}님!`);
+    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+  } catch (error) {
+    btn.disabled = false;
+    btn.textContent = '스비 시작하기';
+    const msgs = {
+      'auth/invalid-credential': '❌ 이메일 또는 비밀번호가 올바르지 않습니다.',
+      'auth/user-not-found':     '❌ 등록되지 않은 이메일입니다.',
+      'auth/wrong-password':     '❌ 비밀번호가 올바르지 않습니다.',
+      'auth/invalid-email':      '❌ 유효하지 않은 이메일 형식입니다.',
+      'auth/too-many-requests':  '❌ 너무 많은 시도입니다. 잠시 후 다시 시도해주세요.',
+    };
+    showToast(msgs[error.code] || '❌ 로그인 오류: ' + error.message);
   }
 }
 
@@ -55,46 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const appleBtn = document.getElementById('apple-login-btn');
   if (appleBtn) appleBtn.addEventListener('click', loginWithApple);
 });
-
-// Auth State Toggle
-function toggleAuth(mode) {
-  const loginForm = document.getElementById('login-form');
-  const signupForm = document.getElementById('signup-form');
-  const toggleBtns = document.querySelectorAll('.toggle-btn');
-  const footerText = document.querySelector('.login-footer');
-
-  if (mode === 'login') {
-    loginForm.style.display = 'block';
-    signupForm.style.display = 'none';
-    toggleBtns[0].classList.add('active');
-    toggleBtns[1].classList.remove('active');
-    footerText.innerHTML = '계정이 없으신가요? <a href="#" onclick="toggleAuth(\'signup\'); return false;">지금 가입하세요</a>';
-  } else {
-    loginForm.style.display = 'none';
-    signupForm.style.display = 'block';
-    toggleBtns[0].classList.remove('active');
-    toggleBtns[1].classList.add('active');
-    footerText.innerHTML = '이미 계정이 있으신가요? <a href="#" onclick="toggleAuth(\'login\'); return false;">로그인하기</a>';
-  }
-}
-
-// Mock Login Handler
-function handleLogin(event) {
-  event.preventDefault();
-  showToast('🚀 환영합니다! 대시보드로 이동 중...');
-  setTimeout(() => {
-    window.location.href = 'index.html';
-  }, 1500);
-}
-
-// Mock Sign Up Handler
-function handleSignUp(event) {
-  event.preventDefault();
-  showToast('✨ 가입을 환영합니다! 첫 로그인을 진행해주세요.');
-  setTimeout(() => {
-    toggleAuth('login');
-  }, 2000);
-}
 
 // Toast Notification System
 function showToast(msg) {
@@ -125,41 +109,23 @@ function showToast(msg) {
   }, 2200);
 }
 
-// Dashboard Specific Functions
+// Dashboard Tab Navigation
 function showTab(name) {
   const content = document.getElementById('tab-' + name);
   if (!content) return;
-
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
   content.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') === `showTab('${name}')`) n.classList.add('active');
   });
 }
 
-function toggleQuest(card) {
-  if (card.classList.contains('completed')) return;
-  card.classList.add('completed');
-  card.querySelector('.quest-progress-fill').style.width = '100%';
-  card.querySelector('.quest-check').textContent = '✓';
-  const xp = card.querySelector('.quest-xp');
-  xp.style.transform = 'scale(1.2)';
-  xp.style.background = '#ECFDF5';
-  xp.style.color = '#065F46';
-  setTimeout(() => { xp.style.transform = 'scale(1)'; }, 300);
-  showToast('✅ 완료! ' + xp.textContent + ' 획득!');
-}
-
 function addQuest() { showToast('✏️ 새 할 일 추가 기능은 곧 업데이트됩니다!'); }
 function selectCurriculum() { showToast('📚 커리큘럼 선택! 계획 자동 생성 중...'); }
 
-// HTML onclick 속성에서 호출 가능하도록 전역 노출
-window.toggleAuth = toggleAuth;
 window.handleLogin = handleLogin;
-window.handleSignUp = handleSignUp;
 window.showTab = showTab;
-window.toggleQuest = toggleQuest;
 window.addQuest = addQuest;
 window.selectCurriculum = selectCurriculum;
+window.showToast = showToast;
