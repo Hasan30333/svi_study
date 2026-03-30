@@ -1,0 +1,26 @@
+:root {
+  --bg:        #F4F6FA;
+  --surface:   #FFFFFF;
+  --surface2:  #EEF2FB;
+  --border:    #E2E8F5;
+  --accent:    #1A6FE8;
+  --accent-dk: #1A2340;
+  --accent-lt: #EBF2FD;
+  --gold:      #F5A623;
+  --green:     #2CB67D;
+  --red:       #E05C5C;
+  --text:      #1A2340;
+  --text-sub:  #4A5578;
+  --muted:     #8A94B2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+.btn { padding: 9px 18px; border-radius: 9px; border: none; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; font-weight: 700; font-size: 13px; transition: all 0.18s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary { background: var(--accent); color: white; box-shadow: 0 3px 10px rgba(26,111,232,0.22); }
+.btn-primary:hover { background: #1560D4; transform: translateY(-1px); box-shadow: 0 5px 15px rgba(26,111,232,0.3); }
+.btn-outline { background: white; border: 1px solid var(--border); color: var(--text-sub); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
