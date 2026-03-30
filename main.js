@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCf6mosg_McII4o4INE1WtZbiNym7On_ns",
@@ -9,7 +9,8 @@ const firebaseConfig = {
   storageBucket: "svi-study.firebasestorage.app",
   messagingSenderId: "780797547188",
   appId: "1:780797547188:web:20c77ac86661105fdbbde1",
-  measurementId: "G-EXRS658K37"
+  measurementId: "G-EXRS658K37",
+  databaseURL:"https://svi-study-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -32,12 +33,27 @@ async function loginWithGoogle() {
   }
 }
 
+// Apple Login Handler
+async function loginWithApple() {
+  const provider = new OAuthProvider('apple.com');
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    showToast(`👋 환영합니다, ${user.displayName || '사용자'}님!`);
+    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+  } catch (error) {
+    console.error("Apple Login Error:", error);
+    showToast('❌ Apple 로그인 오류: ' + error.message);
+  }
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
   const googleBtn = document.getElementById('google-login-btn');
-  if (googleBtn) {
-    googleBtn.addEventListener('click', loginWithGoogle);
-  }
+  if (googleBtn) googleBtn.addEventListener('click', loginWithGoogle);
+
+  const appleBtn = document.getElementById('apple-login-btn');
+  if (appleBtn) appleBtn.addEventListener('click', loginWithApple);
 });
 
 // Auth State Toggle
