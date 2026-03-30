@@ -178,6 +178,8 @@
   .plan-subject-select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; background: white; color: var(--text); cursor: pointer; flex-shrink: 0; }
   .plan-todo-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
   .plan-todo-input:focus { border-color: var(--accent); }
+  .plan-date-input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; color: var(--text-sub); cursor: pointer; flex-shrink: 0; }
+  .plan-date-badge { font-size: 11px; color: var(--accent); background: var(--accent-lt); border-radius: 10px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -484,13 +486,41 @@
     // 오늘의 퀘스트 불러오기
     const q = query(collection(db, 'users', user.uid, 'quests'), where('date', '==', today));
     const questSnap = await getDocs(q);
-    const quests = questSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const quests = questSnap.docs.map(d => ({ id: d.id, source: 'quest', ...d.data() }));
+
+    // 공부 계획 todos 중 오늘 날짜인 항목 불러오기
+    const goalsSnap = await getDocs(collection(db, 'users', user.uid, 'goals'));
+    const goalTodos = (await Promise.all(goalsSnap.docs.map(async gDoc => {
+      const todosSnap = await getDocs(
+        query(collection(db, 'users', user.uid, 'goals', gDoc.id, 'todos'),
+              where('scheduledDate', '==', today))
+      );
+      return todosSnap.docs.map(t => ({
+        id: t.id,
+        goalId: gDoc.id,
+        goalTitle: gDoc.data().title,
+        source: 'goal-todo',
+        // quest-card 호환 필드
+        subject: t.data().subject,
+        bookName: t.data().scheduledDate ? gDoc.data().title : '',
+        title: t.data().title,
+        icon: { '수학': '📐', '영어': '📖', '국어': '📝', '기타': '📌' }[t.data().subject] || '📌',
+        color: { '수학': '#6366F1', '영어': '#1A6FE8', '국어': '#F5A623', '기타': '#8A94B2' }[t.data().subject] || '#8A94B2',
+        xpReward: 50,
+        goalCount: 1,
+        doneCount: t.data().completed ? 1 : 0,
+        completed: t.data().completed,
+        ...t.data()
+      }));
+    }))).flat();
+
+    const allItems = [...quests, ...goalTodos];
 
     renderPlayerCard(userData);
     renderStatsGrid(userData);
     renderHeader(userData);
-    renderQuestList(quests);
-    renderSummaryCards(quests);
+    renderQuestList(allItems);
+    renderSummaryCards(allItems);
   }
 
   // ── 렌더 함수 ──────────────────────────────────────────
@@ -526,14 +556,19 @@
     }
     container.innerHTML = quests.map(q => {
       const pct = q.goalCount > 0 ? Math.round((q.doneCount / q.goalCount) * 100) : 0;
+      const fromPlan = q.source === 'goal-todo'
+        ? `<span style="font-size:10px;background:#EEF2FF;color:#6366F1;border-radius:10px;padding:1px 7px;font-weight:700;margin-left:4px;">계획</span>`
+        : '';
       return `
         <div class="quest-card${q.completed ? ' completed' : ''}"
              style="--quest-color:${q.color}"
              data-quest-id="${q.id}"
+             data-source="${q.source || 'quest'}"
+             data-goal-id="${q.goalId || ''}"
              onclick="toggleQuest(this)">
           <div class="quest-icon">${q.icon}</div>
           <div class="quest-info">
-            <div class="quest-subject">${q.subject} · ${q.bookName}</div>
+            <div class="quest-subject">${q.subject} · ${q.bookName}${fromPlan}</div>
             <div class="quest-title">${q.title}</div>
             <div class="quest-progress-wrap">
               <div class="quest-progress-bar">
@@ -574,20 +609,30 @@
     const xpText = xpEl.textContent; // "+100 XP"
     window.showToast?.('✅ 완료! ' + xpText + ' 획득!');
 
-    const questRef = doc(db, 'users', currentUserId, 'quests', questId);
-    const questSnap = await getDoc(questRef);
-    const questData = questSnap.data();
+    const source = card.dataset.source;
+    const goalId = card.dataset.goalId;
 
-    await updateDoc(questRef, {
-      completed: true,
-      doneCount: questData.goalCount,
-      completedAt: serverTimestamp()
-    });
+    let xpReward = 0;
+    if (source === 'goal-todo') {
+      const todoRef = doc(db, 'users', currentUserId, 'goals', goalId, 'todos', questId);
+      await updateDoc(todoRef, { completed: true });
+      xpReward = 50;
+    } else {
+      const questRef = doc(db, 'users', currentUserId, 'quests', questId);
+      const questSnap = await getDoc(questRef);
+      const questData = questSnap.data();
+      await updateDoc(questRef, {
+        completed: true,
+        doneCount: questData.goalCount,
+        completedAt: serverTimestamp()
+      });
+      xpReward = questData.xpReward;
+    }
 
     const userRef = doc(db, 'users', currentUserId);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
-    const newXp = userData.xp + questData.xpReward;
+    const newXp = userData.xp + xpReward;
     const newCompleted = userData.totalQuestsCompleted + 1;
     await updateDoc(userRef, { xp: newXp, totalQuestsCompleted: newCompleted });
 
@@ -660,6 +705,9 @@
       const pct = total > 0 ? Math.round((done / total) * 100) : 0;
       const todoHTML = goal.todos.map(todo => {
         const color = SUBJECT_COLORS[todo.subject] || SUBJECT_COLORS['기타'];
+        const dateBadge = todo.scheduledDate
+          ? `<span class="plan-date-badge">📅 ${todo.scheduledDate.slice(5).replace('-','/')}</span>`
+          : '';
         return `
           <div class="plan-todo-item${todo.completed ? ' done' : ''}" data-todo-id="${todo.id}" data-goal-id="${goal.id}">
             <div class="plan-todo-check" onclick="planToggleTodo('${goal.id}','${todo.id}',${todo.completed})">
@@ -667,6 +715,7 @@
             </div>
             <span class="plan-subject-tag" style="background:${color}20;color:${color};border:1px solid ${color}40">${todo.subject}</span>
             <span class="plan-todo-title">${todo.title}</span>
+            ${dateBadge}
             <button class="plan-delete-btn" onclick="planDeleteTodo('${goal.id}','${todo.id}')">🗑️</button>
           </div>`;
       }).join('');
@@ -691,6 +740,7 @@
             </select>
             <input class="plan-todo-input" id="todo-input-${goal.id}" type="text" placeholder="할 일 입력..."
               onkeydown="if(event.key==='Enter' && !event.isComposing) planAddTodo('${goal.id}')">
+            <input class="plan-date-input" id="date-${goal.id}" type="date" title="오늘의 할 일에 표시할 날짜">
             <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;"
               onclick="planAddTodo('${goal.id}')">+</button>
           </div>
@@ -720,11 +770,14 @@
   async function planAddTodo(goalId) {
     const input = document.getElementById(`todo-input-${goalId}`);
     const subject = document.getElementById(`subject-${goalId}`).value;
+    const dateInput = document.getElementById(`date-${goalId}`);
     const title = input.value.trim();
     if (!title) return;
+    const scheduledDate = dateInput?.value || null;
     input.value = '';
+    if (dateInput) dateInput.value = '';
     await addDoc(collection(db, 'users', currentUserId, 'goals', goalId, 'todos'), {
-      subject, title, completed: false, createdAt: serverTimestamp()
+      subject, title, completed: false, scheduledDate, createdAt: serverTimestamp()
     });
     loadPlanTab();
   }
