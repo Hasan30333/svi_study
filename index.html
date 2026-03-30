@@ -158,6 +158,26 @@
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* 공부 계획 탭 */
+  .plan-goal-card { margin-bottom: 16px; }
+  .plan-goal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .plan-goal-title { font-size: 15px; font-weight: 800; color: var(--accent-dk); flex: 1; }
+  .plan-goal-progress { font-size: 12px; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .plan-delete-btn { background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.4; padding: 2px 4px; transition: opacity 0.15s; }
+  .plan-delete-btn:hover { opacity: 1; }
+  .plan-todo-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .plan-todo-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); transition: opacity 0.2s; }
+  .plan-todo-item.done { opacity: 0.5; }
+  .plan-todo-item.done .plan-todo-title { text-decoration: line-through; }
+  .plan-todo-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; font-weight: 900; color: var(--accent); flex-shrink: 0; transition: all 0.15s; }
+  .plan-todo-item.done .plan-todo-check { background: var(--accent); border-color: var(--accent); color: white; }
+  .plan-subject-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .plan-todo-title { font-size: 13px; color: var(--text); flex: 1; }
+  .plan-add-todo { display: flex; gap: 8px; align-items: center; padding-top: 8px; border-top: 1px solid var(--border); }
+  .plan-subject-select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; background: white; color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .plan-todo-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
+  .plan-todo-input:focus { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -237,46 +257,11 @@
     <!-- PLAN -->
     <div class="tab-content" id="tab-plan">
       <div class="header">
-        <div class="greeting"><h1>📅 <span>공부 계획</span></h1><p>장기 목표를 입력하면 하루 계획을 자동으로 생성해줄게!</p></div>
-        <button class="btn btn-primary">+ 목표 추가</button>
+        <div class="greeting"><h1>📅 <span>공부 계획</span></h1><p>장기 목표를 추가하고 할 일을 관리해봐!</p></div>
+        <button class="btn btn-primary" onclick="showAddGoalModal()">+ 목표 추가</button>
       </div>
-      <div class="section-title">🎯 장기 목표</div>
-      <div class="grid-2">
-        <div class="card">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-            <div style="font-size:28px;">🏫</div>
-            <div><div style="font-size:14px; font-weight:700; margin-bottom:2px;">고1 국영수 개념 선행</div><div style="font-size:12px; color:var(--accent); font-weight:600;">진행중 · D-47일</div></div>
-            <div style="margin-left:auto; background:var(--accent-lt); border:1px solid #BFDBFE; border-radius:8px; padding:5px 11px; font-size:13px; color:var(--accent); font-weight:700;">34%</div>
-          </div>
-          <div style="height:7px; background:var(--surface2); border-radius:4px; overflow:hidden; margin-bottom:12px;"><div style="height:100%; width:34%; background:var(--accent); border-radius:4px;"></div></div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <span style="font-size:11px; background:var(--surface2); padding:3px 9px; border-radius:20px; border:1px solid var(--border); color:var(--text-sub);">📚 수능특강</span>
-            <span style="font-size:11px; background:var(--surface2); padding:3px 9px; border-radius:20px; border:1px solid var(--border); color:var(--text-sub);">📖 자이스토리</span>
-            <span style="font-size:11px; background:var(--surface2); padding:3px 9px; border-radius:20px; border:1px solid var(--border); color:var(--text-sub);">📐 쎈</span>
-          </div>
-        </div>
-        <div class="card" style="border-style:dashed; display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--bg);" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="text-align:center; color:var(--muted);"><div style="font-size:30px; margin-bottom:8px;">➕</div><div style="font-size:13px; font-weight:600;">새 목표 추가하기</div><div style="font-size:11px; margin-top:4px;">목표 입력 → 계획 자동 생성</div></div>
-        </div>
-      </div>
-      <div class="section-title">📆 이번 주 계획</div>
-      <div class="card">
-        <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:8px; text-align:center;">
-          <div style="font-size:11px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);">월</div>
-          <div style="font-size:11px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);">화</div>
-          <div style="font-size:11px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);">수</div>
-          <div style="font-size:11px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);">목</div>
-          <div style="font-size:11px;color:var(--accent);font-weight:700;padding-bottom:8px;border-bottom:2px solid var(--accent);">금 (오늘)</div>
-          <div style="font-size:11px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);">토</div>
-          <div style="font-size:11px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);">일</div>
-          <div style="padding:8px 4px;"><div style="background:#DCFCE7;color:#166534;border-radius:5px;padding:4px;font-size:10px;margin-bottom:4px;">수학 ✓</div><div style="background:#DCFCE7;color:#166534;border-radius:5px;padding:4px;font-size:10px;">영어 ✓</div></div>
-          <div style="padding:8px 4px;"><div style="background:#DCFCE7;color:#166534;border-radius:5px;padding:4px;font-size:10px;margin-bottom:4px;">국어 ✓</div><div style="background:#DCFCE7;color:#166534;border-radius:5px;padding:4px;font-size:10px;">수학 ✓</div></div>
-          <div style="padding:8px 4px;"><div style="background:#DCFCE7;color:#166534;border-radius:5px;padding:4px;font-size:10px;margin-bottom:4px;">영어 ✓</div><div style="background:#FEE2E2;color:#991B1B;border-radius:5px;padding:4px;font-size:10px;">수학 ✗</div></div>
-          <div style="padding:8px 4px;"><div style="background:#DCFCE7;color:#166534;border-radius:5px;padding:4px;font-size:10px;margin-bottom:4px;">국어 ✓</div><div style="background:#DCFCE7;color:#166534;border-radius:5px;padding:4px;font-size:10px;">영어 ✓</div></div>
-          <div style="padding:8px 4px;border:1.5px solid var(--accent);border-radius:8px;"><div style="background:var(--accent-lt);color:var(--accent);border-radius:5px;padding:4px;font-size:10px;margin-bottom:4px;">국어 진행중</div><div style="background:#EEF2FF;color:#4338CA;border-radius:5px;padding:4px;font-size:10px;">수학 남음</div></div>
-          <div style="padding:8px 4px;opacity:0.35;"><div style="background:var(--surface2);border-radius:5px;padding:4px;font-size:10px;margin-bottom:4px;">수학</div><div style="background:var(--surface2);border-radius:5px;padding:4px;font-size:10px;">영어</div></div>
-          <div style="padding:8px 4px;opacity:0.35;"><div style="background:var(--surface2);border-radius:5px;padding:4px;font-size:10px;">복습일</div></div>
-        </div>
+      <div id="goals-container">
+        <div style="text-align:center; padding:60px; color:var(--muted);">불러오는 중...</div>
       </div>
     </div>
 
@@ -420,7 +405,7 @@
 <script type="module">
   import { getApps, getApp, initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCf6mosg_McII4o4INE1WtZbiNym7On_ns",
@@ -627,6 +612,179 @@
 
   window.toggleQuest = toggleQuest;
   window.handleLogout = handleLogout;
+
+  // ── showTab override: plan 탭 진입 시 데이터 로드 ──────
+  const _origShowTab = window.showTab;
+  window.showTab = function(name) {
+    _origShowTab(name);
+    if (name === 'plan' && currentUserId) loadPlanTab();
+  };
+
+  // ── 공부 계획 탭 ───────────────────────────────────────
+
+  async function loadPlanTab() {
+    const container = document.getElementById('goals-container');
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">불러오는 중...</div>`;
+    const goalsSnap = await getDocs(
+      query(collection(db, 'users', currentUserId, 'goals'), orderBy('createdAt', 'asc'))
+    );
+    const goals = await Promise.all(goalsSnap.docs.map(async gDoc => {
+      const todosSnap = await getDocs(
+        query(collection(db, 'users', currentUserId, 'goals', gDoc.id, 'todos'), orderBy('createdAt', 'asc'))
+      );
+      return {
+        id: gDoc.id,
+        ...gDoc.data(),
+        todos: todosSnap.docs.map(t => ({ id: t.id, ...t.data() }))
+      };
+    }));
+    renderGoals(goals);
+  }
+
+  const SUBJECT_COLORS = { '수학': '#6366F1', '영어': '#1A6FE8', '국어': '#F5A623', '기타': '#8A94B2' };
+
+  function renderGoals(goals) {
+    const container = document.getElementById('goals-container');
+    if (goals.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:80px 20px;color:var(--muted);">
+          <div style="font-size:40px;margin-bottom:16px;">🎯</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px;">아직 목표가 없어요</div>
+          <div style="font-size:13px;">+ 목표 추가 버튼으로 첫 번째 목표를 만들어봐!</div>
+        </div>`;
+      return;
+    }
+    container.innerHTML = goals.map(goal => {
+      const total = goal.todos.length;
+      const done = goal.todos.filter(t => t.completed).length;
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      const todoHTML = goal.todos.map(todo => {
+        const color = SUBJECT_COLORS[todo.subject] || SUBJECT_COLORS['기타'];
+        return `
+          <div class="plan-todo-item${todo.completed ? ' done' : ''}" data-todo-id="${todo.id}" data-goal-id="${goal.id}">
+            <div class="plan-todo-check" onclick="planToggleTodo('${goal.id}','${todo.id}',${todo.completed})">
+              ${todo.completed ? '✓' : ''}
+            </div>
+            <span class="plan-subject-tag" style="background:${color}20;color:${color};border:1px solid ${color}40">${todo.subject}</span>
+            <span class="plan-todo-title">${todo.title}</span>
+            <button class="plan-delete-btn" onclick="planDeleteTodo('${goal.id}','${todo.id}')">🗑️</button>
+          </div>`;
+      }).join('');
+      return `
+        <div class="card plan-goal-card" id="goal-card-${goal.id}">
+          <div class="plan-goal-header">
+            <span style="font-size:18px;">🎯</span>
+            <span class="plan-goal-title">${goal.title}</span>
+            <span class="plan-goal-progress">${done}/${total} · ${pct}%</span>
+            <button class="plan-delete-btn" onclick="planDeleteGoal('${goal.id}')">🗑️</button>
+          </div>
+          <div style="height:5px;background:var(--surface2);border-radius:3px;margin:10px 0 14px;">
+            <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;transition:width 0.3s;"></div>
+          </div>
+          <div class="plan-todo-list" id="todo-list-${goal.id}">${todoHTML}</div>
+          <div class="plan-add-todo">
+            <select class="plan-subject-select" id="subject-${goal.id}">
+              <option value="수학">수학</option>
+              <option value="영어">영어</option>
+              <option value="국어">국어</option>
+              <option value="기타">기타</option>
+            </select>
+            <input class="plan-todo-input" id="todo-input-${goal.id}" type="text" placeholder="할 일 입력..."
+              onkeydown="if(event.key==='Enter') planAddTodo('${goal.id}')">
+            <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;"
+              onclick="planAddTodo('${goal.id}')">+</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // 목표 추가
+  async function planAddGoal(title) {
+    if (!title.trim()) return;
+    await addDoc(collection(db, 'users', currentUserId, 'goals'), {
+      title: title.trim(),
+      createdAt: serverTimestamp()
+    });
+    loadPlanTab();
+  }
+
+  // 목표 삭제 (todos 포함)
+  async function planDeleteGoal(goalId) {
+    const todosSnap = await getDocs(collection(db, 'users', currentUserId, 'goals', goalId, 'todos'));
+    await Promise.all(todosSnap.docs.map(t => deleteDoc(t.ref)));
+    await deleteDoc(doc(db, 'users', currentUserId, 'goals', goalId));
+    loadPlanTab();
+  }
+
+  // to-do 추가
+  async function planAddTodo(goalId) {
+    const input = document.getElementById(`todo-input-${goalId}`);
+    const subject = document.getElementById(`subject-${goalId}`).value;
+    const title = input.value.trim();
+    if (!title) return;
+    input.value = '';
+    await addDoc(collection(db, 'users', currentUserId, 'goals', goalId, 'todos'), {
+      subject, title, completed: false, createdAt: serverTimestamp()
+    });
+    loadPlanTab();
+  }
+
+  // to-do 완료 토글
+  async function planToggleTodo(goalId, todoId, current) {
+    await updateDoc(doc(db, 'users', currentUserId, 'goals', goalId, 'todos', todoId), {
+      completed: !current
+    });
+    loadPlanTab();
+  }
+
+  // to-do 삭제
+  async function planDeleteTodo(goalId, todoId) {
+    await deleteDoc(doc(db, 'users', currentUserId, 'goals', goalId, 'todos', todoId));
+    loadPlanTab();
+  }
+
+  // 목표 추가 모달
+  function showAddGoalModal() {
+    const existing = document.getElementById('goal-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'goal-modal';
+    modal.style.cssText = `
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(26,35,64,0.4);z-index:1000;
+      display:flex;align-items:center;justify-content:center;`;
+    modal.innerHTML = `
+      <div style="background:white;border-radius:20px;padding:32px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,0.15);">
+        <div style="font-size:16px;font-weight:900;color:var(--accent-dk);margin-bottom:20px;">🎯 새 목표 추가</div>
+        <input id="goal-modal-input" type="text" placeholder="예: 고1 수학 선행, 내신 대비..."
+          style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;
+                 font-family:'Noto Sans KR',sans-serif;font-size:14px;outline:none;margin-bottom:16px;"
+          onkeydown="if(event.key==='Enter') confirmAddGoal()"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="document.getElementById('goal-modal').remove()">취소</button>
+          <button class="btn btn-primary" onclick="confirmAddGoal()">추가하기</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.getElementById('goal-modal-input').focus();
+  }
+
+  function confirmAddGoal() {
+    const input = document.getElementById('goal-modal-input');
+    const title = input.value.trim();
+    if (!title) return;
+    document.getElementById('goal-modal').remove();
+    planAddGoal(title);
+  }
+
+  window.showAddGoalModal = showAddGoalModal;
+  window.confirmAddGoal = confirmAddGoal;
+  window.planAddTodo = planAddTodo;
+  window.planToggleTodo = planToggleTodo;
+  window.planDeleteTodo = planDeleteTodo;
+  window.planDeleteGoal = planDeleteGoal;
 </script>
 </body>
 </html>
